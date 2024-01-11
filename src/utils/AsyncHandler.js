@@ -1,11 +1,11 @@
  // this method can be used when the function handled with promises
 const AsyncHandler = (requestHandler) => {
-  (req, res, next) => {
+ return (req, res, next) => {
     Promise.resolve(requestHandler(req, res, next)).catch((err) => next(err));
   };
 };
 
-export { AsyncHandler };
+export default AsyncHandler ;
 
 /*
 
