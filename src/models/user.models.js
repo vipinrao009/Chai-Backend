@@ -31,7 +31,7 @@ const userSchema = new Schema(
     },
     coverImage: {
       type: String, //cloudinary url
-      required:true
+      // required:true
     },
     watchHistory: [
       {
@@ -63,25 +63,26 @@ userSchema.methods = {
     return await bcrypt.compare(password, this.password);
   },
 
-  generateJwtToken: function () {
-    jwt.sign(
+  generateAccessToken: function () {
+     return jwt.sign(
       {
-        id: this._id,
+        _id: this._id,
         email: this.email,
         fullName: this.fullName,
         userName: this.userName,
       },
-      process.env.JWT_SECRET,
+      process.env.ACCESS_TOKEN_SECRET,
       {
-        expiresIn: process.env.JWT_EXPIRY,
+        expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
       }
     );
+
   },
 
   generateRefreshToken: function () {
-    jwt.sign(
+   return jwt.sign(
       {
-        id: this._id,
+        _id: this._id,
       },
       process.env.REFRESH_TOKEN_SECRET,
       {
