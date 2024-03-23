@@ -158,7 +158,7 @@ const loginUser = AsyncHandler(async (req, res) => {
   const options = {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
-    secure: true,
+    secure: false,
   };
 
   return res
@@ -261,7 +261,113 @@ const refreshAccessToken = AsyncHandler(async (req, res) => {
         )
       );
   } catch (error) {
-    throw new ApiError(500,error?.message || "Invalid refresh token")
+    throw new ApiError(500, error?.message || "Invalid refresh token");
   }
 });
-export { registerUser, loginUser, logoutUser , refreshAccessToken};
+
+const changeCurrentPassword = AsyncHandler(async (req, res) => {
+  //get the old password and new password from body (user)
+  //get the user
+  //compare the old password with db
+  //set the new password and save in db also
+  //send the response
+
+  const { oldPassword, newPassword } = req.body;
+
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    throw new ApiError(401, "User Not found");
+  }
+
+  const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+
+  if (!isPasswordCorrect) {
+    throw new ApiError(401, "Invalid old password");
+  }
+
+  user.password = newPassword;
+
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password changed successfully"));
+});
+
+const getCurrentUser = AsyncHandler(async (req, res) => {
+  return res
+    .status(200)
+    .json(200, req.user, "Current user fetched successfully");
+});
+
+const updateAccoundDetails = AsyncHandler(async(req,res) => {
+  //get the data from user
+  //find the user and update 
+
+  const {fullName,email} = req.body
+
+  if(!fullName || !email){
+    throw new ApiError(400,"Fullname and email are required")
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set:{
+        fullName,
+        email
+      },
+    },
+    {new:true}
+  ).select("-password")
+
+  return res
+  .status(200)
+  .json(
+    new ApiResponse(201,user,"Account details updated successfully")
+  )
+})
+
+const updateUserAvatar = AsyncHandler(async(req,res) =>{
+  //get the localfile from multer
+  //upload on cloudinary
+  //check cloudinary url is generated or not
+  //update the avatar
+
+  const avatarLocalPath = req.file
+
+  if(!avatarLocalPath){
+    throw new ApiError(401,"Avatar file is missing")
+  }
+
+  const avatar = await uploadOnCloudinary(avatarLocalPath)
+
+  if(!avatar.url){
+    throw new ApiError(401,"Error while uploading on avatar")
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set:{avatar:avatar.url}
+    },
+    {new:true}
+  ).select("-password")
+
+  return res
+  .status(200)
+  .json(
+    new ApiResponse(200,user,"Avatar updated successfully")
+  )
+})
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  changeCurrentPassword,
+  getCurrentUser,
+  updateAccoundDetails,
+  updateUserAvatar
+};
